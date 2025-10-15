@@ -1896,6 +1896,24 @@ function generateReport(type) {
     }, 500);
 }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://tzcttdubkddjyaohqhku.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6Y3R0ZHVia2Rkanlhb2hxaGt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NjEwMjEsImV4cCI6MjA3NjAzNzAyMX0.MjP-Dze6XpWWqQs7oWBrt_zrmK1Bamyot-K-Z4ST-pk";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // Test connection
+  async function testConnection() {
+    const { data, error } = await db.from('products').select('*').limit(1);
+    if (error) {
+      alert("❌ Connection failed: " + error.message);
+    } else {
+      alert("✅ Connected to Supabase successfully!");
+      console.log(data);
+    }
+  }
+
+  testConnection();
+</script>
 </body>
 </html>
