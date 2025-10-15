@@ -1915,5 +1915,56 @@ function generateReport(type) {
 
   testConnection();
 </script>
-</body>
+</body><script>
+  // --- Save a new sale ---
+  async function addSale(product_id, quantity, total_price) {
+    const { error } = await db.from('sales').insert([
+      {
+        product_id,
+        quantity,
+        total_price,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    if (error) alert("❌ Sale save failed: " + error.message);
+    else alert("✅ Sale saved!");
+  }
+
+  // --- Save a new repair ---
+  async function addRepair(customer_name, device, problem, cost, status) {
+    const { error } = await db.from('repairs').insert([
+      {
+        customer_name,
+        device,
+        problem,
+        cost,
+        status,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    if (error) alert("❌ Repair save failed: " + error.message);
+    else alert("✅ Repair saved!");
+  }
+
+  // --- Update stock after sale ---
+  async function updateStock(product_id, new_stock) {
+    const { error } = await db
+      .from('products')
+      .update({ stock: new_stock })
+      .eq('id', product_id);
+    if (error) console.error("Stock update failed:", error.message);
+  }
+
+  // --- Load all data (for dashboard refresh) ---
+  async function loadDashboard() {
+    const { data: sales } = await db.from('sales').select('*');
+    const { data: repairs } = await db.from('repairs').select('*');
+    console.log("Sales:", sales);
+    console.log("Repairs:", repairs);
+    // You can display these in your UI later
+  }
+
+  // --- Auto-refresh every 10s ---
+  setInterval(loadDashboard, 10000);
+</script>
 </html>
