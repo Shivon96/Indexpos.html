@@ -1,165 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pathirage Electronics - POS (Repairs / Sales / Inventory)</title>
-  <meta name="theme-color" content="#007bff" />
-  <style>
-    /* Basic styles - compact and mobile-friendly */
-    :root{--primary:#007bff;--muted:#f1f3f5}
-    body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#f6f7fb;color:#222}
-    .app{max-width:1000px;margin:12px auto;padding:14px}
-    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-    h1{margin:0;font-size:20px;color:var(--primary)}
-    .tabs{display:flex;gap:8px;margin-bottom:12px}
-    .tab{padding:8px 12px;border-radius:6px;border:none;background:var(--muted);cursor:pointer}
-    .tab.active{background:var(--primary);color:white}
-    .grid{display:grid;grid-template-columns:1fr 420px;gap:12px}
-    .card{background:white;padding:12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-    .list{max-height:60vh;overflow:auto}
-    label{display:block;font-weight:600;margin-top:8px;font-size:13px}
-    input,select,textarea{width:100%;padding:8px;margin-top:6px;border-radius:6px;border:1px solid #ddd;font-size:14px;box-sizing:border-box}
-    button{padding:8px 10px;border-radius:6px;border:none;background:var(--primary);color:white;cursor:pointer}
-    .btn-secondary{background:#6c757d}
-    .row{display:flex;gap:8px;align-items:center}
-    .job{padding:8px;border-radius:6px;border-left:4px solid var(--primary);margin-bottom:8px;background:#fbfbfd}
-    .small{font-size:13px;color:#555}
-    .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-    .sync{position:fixed;bottom:14px;right:14px;padding:8px 10px;border-radius:8px;color:white;font-weight:700}
-    .sync.online{background:green} .sync.offline{background:orange} .sync.syncing{background:#007bff}
-    .footer{margin-top:12px;padding:10px;background:var(--primary);color:white;border-radius:8px;text-align:center}
-    .receipt-content{display:none}
-    @media (max-width:900px){.grid{grid-template-columns:1fr;}.card{margin-bottom:10px}}
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Pathirage Electronics - Repair Manager</title>
+    <meta name="theme-color" content="#007bff">
+    <style>
+        /* (kept original styling, slightly compacted) */
+        body { font-family: Arial, sans-serif; padding: 15px; background: #f8f9fa; max-width:100%; margin:0 auto; }
+        .container { background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+        h1,h2{ color:#007bff; margin:0 0 8px 0; }
+        label{ display:block; margin-top:15px; font-weight:bold; }
+        input,select,textarea{ width:100%; padding:10px; margin-top:5px; border:1px solid #ddd; border-radius:5px; font-size:16px; box-sizing:border-box }
+        button{ background:#007bff; color:white; border:none; padding:12px 20px; margin-top:20px; border-radius:5px; cursor:pointer; font-size:16px }
+        button:hover{ background:#0056b3 }
+        .job{ background:#f1f1f1; padding:15px; margin-top:15px; border-radius:8px; border-left:4px solid #007bff; position:relative }
+        .job-status{ padding:3px 8px; border-radius:4px; font-weight:bold; color:white }
+        .payment-status{ display:inline-block; padding:3px 8px; border-radius:4px; font-weight:bold; color:white }
+        .delivered{ background:green }
+        .ready{ background:orange }
+        .progress{ background:#007bff }
+        .pending{ background:red }
+        .paid{ background:green }
+        .partial{ background:orange }
+        .unpaid{ background:red }
+        .actions{ display:flex; gap:10px; margin-top:20px; flex-wrap:wrap }
+        .search-box{ width:100%; padding:12px; font-size:16px; border:2px solid #007bff; border-radius:5px; margin:15px 0 }
+        #exportBtn{ background:#28a745 }
+        #searchBtn{ background:#ffc107; color:#212529 }
+        #clearSearchBtn{ background:#dc3545; color:white }
+        .complete-btn, .edit-btn, .edit-payment-btn, .sms-btn, .receipt-btn, .deliver-btn { padding:6px 10px; font-size:12px; margin-top:5px; border-radius:4px; cursor:pointer; margin-right:5px; margin-bottom:5px; }
+        .complete-btn, .deliver-btn { background:#28a745; color:white }
+        .edit-btn{ background:#17a2b8; color:white }
+        .edit-payment-btn{ background:#ffc107; color:#212529 }
+        .sms-btn{ background:#007bff; color:white }
+        .receipt-btn{ background:#6f42c1; color:white }
+        .modal{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center }
+        .modal-content{ background:white; padding:20px; border-radius:10px; width:90%; max-width:400px; text-align:left }
+        .modal-title{ margin-top:0; color:#007bff }
+        .modal-actions{ margin-top:20px; display:flex; gap:10px }
+        .tabs{ display:flex; margin-bottom:20px; border-bottom:2px solid #007bff }
+        .tab{ padding:10px 20px; cursor:pointer; background:#f1f1f1; border:none; font-weight:bold }
+        .tab.active{ background:#007bff; color:white }
+        .footer{ margin-top:30px; padding:15px; background:#007bff; color:white; text-align:center; border-radius:8px; font-weight:bold }
+        .job-number{ background:#6c757d; color:white; padding:3px 8px; border-radius:4px; font-size:14px; font-weight:bold }
+        .receipt-content{ display:none }
+        @media print { body * { visibility:hidden } .receipt-content, .receipt-content * { visibility:visible } .receipt-content { position:absolute; left:0; top:0; width:58mm; margin:0; padding:3mm 2mm; font-family:'Courier New', monospace; font-size:11px; line-height:1.3; box-sizing:border-box } .receipt-content button, .receipt-content .actions { display:none !important } }
+        #syncStatus{ position:fixed; bottom:10px; right:10px; padding:5px 10px; border-radius:5px; font-size:12px; font-weight:bold; color:white; z-index:1000 }
+        .sync-online{ background:green }
+        .sync-offline{ background:orange }
+        .sync-syncing{ background:#007bff }
+    </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div>
-        <h1>📱 Pathirage Electronics — POS</h1>
-        <div class="small">Repair · Sales · Inventory (LKR)</div>
-      </div>
-      <div class="row">
-        <div id="lastSync" class="small" style="margin-right:10px">Last sync: —</div>
-        <div id="syncStatus" class="sync offline">OFFLINE</div>
-      </div>
-    </header>
+    <div class="container">
+        <h1>📱 Pathirage Electronics</h1>
+        <p style="color:#666;font-size:14px">Repair Shop Manager (LKR)</p>
 
-    <div class="tabs">
-      <button class="tab active" data-tab="repairs">🔧 Repairs</button>
-      <button class="tab" data-tab="sales">💰 Sales</button>
-      <button class="tab" data-tab="inventory">📦 Inventory</button>
-    </div>
+        <div class="form">
+            <label>Customer Name *</label>
+            <input type="text" id="customerName" placeholder="e.g. John Doe" required>
 
-    <div class="grid">
-      <!-- MAIN COLUMN: lists -->
-      <div>
-        <div id="mainContent" class="card list">
-          <!-- content injected by JS -->
+            <label>Phone *</label>
+            <input type="tel" id="customerPhone" placeholder="e.g. 0712345678" required>
+
+            <label>Address</label>
+            <textarea id="customerAddress" rows="2" placeholder="House #, Street, City"></textarea>
+
+            <label>Brand</label>
+            <input type="text" id="deviceBrand" placeholder="e.g. Samsung, Apple, Dell">
+
+            <label>Model *</label>
+            <input type="text" id="deviceModel" placeholder="e.g. Galaxy S23, MacBook Pro" required>
+
+            <label>Issue Description</label>
+            <textarea id="issueDesc" rows="3" placeholder="Describe the problem..."></textarea>
+
+            <label>Repair Date (Received)</label>
+            <input type="date" id="repairDate">
+
+            <label>Expected Delivery Date</label>
+            <input type="date" id="deliveryDate">
+
+            <label>Status</label>
+            <select id="status">
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Ready for Pickup">Ready for Pickup</option>
+            </select>
+
+            <button id="saveBtn">💾 Save Repair Job</button>
         </div>
-      </div>
 
-      <!-- SIDE COLUMN: forms -->
-      <div>
-        <div id="formPanel" class="card">
-          <!-- form injected -->
+        <div class="actions">
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search by Name, Phone, or Job Number (e.g. PE-2025-0001)">
+            <button id="searchBtn">Search</button>
+            <button id="clearSearchBtn">Clear</button>
+            <button id="exportBtn">📤 Export All Jobs</button>
         </div>
-      </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="active">🔧 Active Jobs</button>
+            <button class="tab" data-tab="all">📋 All Jobs</button>
+        </div>
+
+        <div id="jobList">
+            <!-- Jobs will appear here -->
+        </div>
+
+        <div class="footer">
+            ☎️ Hotline: 070 607 7 607<br>
+            🛠️ Pathirage Electronics - We Care For Your Devices
+        </div>
     </div>
 
-    <div class="footer">
-      ☎️ Hotline: 070 607 7 607  —  Pathirage Electronics
-    </div>
+    <!-- Modals (same as original) -->
+    <div id="completeModal" class="modal"><div class="modal-content">
+        <h3 class="modal-title">✅ Complete Repair</h3>
+        <label>Repair Price (LKR)</label><input type="number" id="modalPrice" min="0" step="0.01" placeholder="e.g. 1500.00">
+        <label>Amount Paid (LKR)</label><input type="number" id="modalPaid" min="0" step="0.01" placeholder="e.g. 1000.00">
+        <div class="modal-actions"><button id="modalSaveBtn">💾 Save & Mark Ready for Pickup</button><button id="modalCancelBtn">❌ Cancel</button></div>
+    </div></div>
 
-    <!-- Hidden receipt area for printing -->
-    <div id="receiptContent" class="receipt-content"></div>
-  </div>
+    <div id="paymentModal" class="modal"><div class="modal-content">
+        <h3 class="modal-title">✏️ Edit Price & Payment</h3>
+        <label>Repair Price (LKR)</label><input type="number" id="editPrice" min="0" step="0.01" placeholder="e.g. 1500.00">
+        <label>Amount Paid (LKR)</label><input type="number" id="editPaid" min="0" step="0.01" placeholder="e.g. 1000.00">
+        <div class="modal-actions"><button id="editSaveBtn">💾 Save Changes</button><button id="editCancelBtn">❌ Cancel</button></div>
+    </div></div>
 
-  <!-- Supabase + App Script -->
-  <script type="module">
+    <div id="editJobModal" class="modal"><div class="modal-content">
+        <h3 class="modal-title">✏️ Edit Job Details</h3>
+        <input type="hidden" id="editJobId">
+        <label>Job Number</label><input type="text" id="editJobNumber" readonly>
+        <label>Customer Name</label><input type="text" id="editCustomerName" placeholder="e.g. John Doe">
+        <label>Phone</label><input type="tel" id="editCustomerPhone" placeholder="e.g. 0712345678">
+        <label>Address</label><textarea id="editCustomerAddress" rows="2" placeholder="House #, Street, City"></textarea>
+        <label>Brand</label><input type="text" id="editDeviceBrand" placeholder="e.g. Samsung, Apple, Dell">
+        <label>Model</label><input type="text" id="editDeviceModel" placeholder="e.g. Galaxy S23, MacBook Pro">
+        <label>Issue Description</label><textarea id="editIssueDesc" rows="3" placeholder="Describe the problem..."></textarea>
+        <label>Repair Date</label><input type="date" id="editRepairDate">
+        <label>Expected Delivery Date</label><input type="date" id="editDeliveryDate">
+        <label>Status</label>
+        <select id="editStatus">
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Ready for Pickup">Ready for Pickup</option>
+            <option value="Delivered">Delivered</option>
+        </select>
+        <div class="modal-actions"><button id="saveEditBtn">💾 Save Changes</button><button id="cancelEditBtn">❌ Cancel</button></div>
+    </div></div>
+
+    <!-- Receipt container -->
+    <div class="receipt-content" id="receiptContent"></div>
+
+    <!-- Sync indicator -->
+    <div id="syncStatus" class="sync-offline">OFFLINE</div>
+
+    <!-- Supabase + App logic -->
+    <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase-esm.js';
 
-    /********* CONFIG - your Supabase settings (you provided these) *********/
+    // ----------------- CONFIG -----------------
     const SUPABASE_URL = 'https://tzcttdubkddjyaohqhku.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6Y3R0ZHVia2Rkanlhb2hxaGt1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NjEwMjEsImV4cCI6MjA3NjAzNzAyMX0.MjP-Dze6XpWWqQs7oWBrt_zrmK1Bamyot-K-Z4ST-pk';
-    /************************************************************************/
+    // ------------------------------------------
 
-    // Tables used: repairs, sales, inventory
+    // Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { realtime: { params: { eventsPerSecond: 5 } } });
+
     // Local storage keys
+    const STORAGE_KEY = 'repairJobs_v2';
     const LS_REPAIRS = 'pos_repairs_v2';
     const LS_SALES = 'pos_sales_v2';
     const LS_INVENTORY = 'pos_inventory_v2';
     const LS_QUEUE = 'pos_sync_queue_v2';
 
-    // Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      realtime: { params: { eventsPerSecond: 5 } }
-    });
+    // DOM refs
+    const saveBtn = document.getElementById('saveBtn');
+    const jobListEl = document.getElementById('jobList');
+    const exportBtn = document.getElementById('exportBtn');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const tabs = document.querySelectorAll('.tab');
+    const receiptContent = document.getElementById('receiptContent');
+    const syncStatus = document.getElementById('syncStatus');
+    const lastSyncKey = 'pos_last_sync';
+
+    // Modals & inputs (existing)
+    const completeModal = document.getElementById('completeModal');
+    const paymentModal = document.getElementById('paymentModal');
+    const editJobModal = document.getElementById('editJobModal');
+    const modalPrice = document.getElementById('modalPrice');
+    const modalPaid = document.getElementById('modalPaid');
+    const editPrice = document.getElementById('editPrice');
+    const editPaid = document.getElementById('editPaid');
+    const editJobId = document.getElementById('editJobId');
+    const editJobNumber = document.getElementById('editJobNumber');
+    const editCustomerName = document.getElementById('editCustomerName');
+    const editCustomerPhone = document.getElementById('editCustomerPhone');
+    const editCustomerAddress = document.getElementById('editCustomerAddress');
+    const editDeviceBrand = document.getElementById('editDeviceBrand');
+    const editDeviceModel = document.getElementById('editDeviceModel');
+    const editIssueDesc = document.getElementById('editIssueDesc');
+    const editRepairDate = document.getElementById('editRepairDate');
+    const editDeliveryDate = document.getElementById('editDeliveryDate');
+    const editStatus = document.getElementById('editStatus');
+    const modalSaveBtn = document.getElementById('modalSaveBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    const editSaveBtn = document.getElementById('editSaveBtn');
+    const editCancelBtn = document.getElementById('editCancelBtn');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
 
     // App state
-    let currentTab = 'repairs';
-    let repairs = [];
-    let sales = [];
-    let inventory = [];
+    let jobs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let sales = JSON.parse(localStorage.getItem(LS_SALES) || '[]');
+    let inventory = JSON.parse(localStorage.getItem(LS_INVENTORY) || '[]');
     let syncQueue = JSON.parse(localStorage.getItem(LS_QUEUE) || '[]');
+    let currentJobId = null;
+    let currentTab = 'active'; // active | all
 
-    // DOM refs
-    const tabs = document.querySelectorAll('.tab');
-    const mainContent = document.getElementById('mainContent');
-    const formPanel = document.getElementById('formPanel');
-    const syncStatus = document.getElementById('syncStatus');
-    const lastSyncEl = document.getElementById('lastSync');
-    const receiptContent = document.getElementById('receiptContent');
-
-    // Shop info for receipts/SMS
+    // Shop info
     const SHOP_NAME = "පතිරගේ ඉලෙක්ට්‍රොනික්ස්";
     const HOTLINE = "070 607 7 607";
 
-    // Utilities
-    function setSyncStatus(state, text) {
-      syncStatus.className = 'sync ' + (state || 'offline');
-      syncStatus.textContent = text || (state || 'offline').toUpperCase();
-      lastSyncEl.textContent = 'Last sync: ' + (localStorage.getItem('pos_last_sync') || '—');
+    // BroadcastChannel for same-device multi-tab sync
+    let broadcastChannel;
+    try {
+      broadcastChannel = new BroadcastChannel('repair_jobs_sync');
+      broadcastChannel.onmessage = (event) => {
+        if (event.data.type === 'UPDATE_JOBS') {
+          jobs = event.data.jobs;
+          renderJobs(searchInput.value.trim());
+        }
+      };
+    } catch (e) {
+      console.warn('BroadcastChannel not supported, fallback to storage event');
     }
-    function nowISO(){ return new Date().toISOString(); }
-    function formatLKR(val){ return typeof val === 'number' ? 'Rs ' + val.toFixed(2) : 'Rs 0.00'; }
 
-    // Local storage helpers
-    function saveLocal() {
-      localStorage.setItem(LS_REPAIRS, JSON.stringify(repairs));
+    // Helpers
+    function setSyncBadge(state) {
+      // state: 'online' | 'offline' | 'syncing'
+      syncStatus.className = (state === 'online') ? 'sync-online' : (state === 'syncing') ? 'sync-syncing' : 'sync-offline';
+      syncStatus.textContent = (state === 'online') ? 'ONLINE' : (state === 'syncing') ? 'SYNCING...' : 'OFFLINE';
+    }
+    function saveLocalJobs() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
       localStorage.setItem(LS_SALES, JSON.stringify(sales));
       localStorage.setItem(LS_INVENTORY, JSON.stringify(inventory));
       localStorage.setItem(LS_QUEUE, JSON.stringify(syncQueue));
+      if (broadcastChannel) broadcastChannel.postMessage({ type: 'UPDATE_JOBS', jobs });
     }
 
-    // Queue operations for offline operations
+    function nowISO() { return new Date().toISOString(); }
+
+    // Queue for offline ops
     function pushQueue(op) {
-      // op: { type: 'insert'|'update'|'delete', table: 'repairs'|'sales'|'inventory', payload: {...} }
       syncQueue.push(op);
-      saveLocal();
+      localStorage.setItem(LS_QUEUE, JSON.stringify(syncQueue));
     }
 
     async function flushQueue() {
-      if (syncQueue.length === 0) return;
-      setSyncStatus('syncing','SYNCING...');
-      // Use a temp queue to avoid mutation during processing
+      if (syncQueue.length === 0) {
+        setSyncBadge('online');
+        localStorage.setItem(lastSyncKey, new Date().toLocaleString());
+        return;
+      }
+      setSyncBadge('syncing');
+      // process in order
       const queueCopy = [...syncQueue];
-      const failed = [];
-
-      for (const q of queueCopy) {
+      for (let i = 0; i < queueCopy.length; i++) {
+        const q = queueCopy[i];
         try {
           if (q.table === 'repairs') {
             if (q.type === 'insert') {
-              await supabase.from('repairs').insert(q.payload);
+              // If local temp id exists, remove before insert to avoid conflict
+              const payload = {...q.payload};
+              // don't include local id if it's not remote id
+              delete payload.id;
+              const { data, error } = await supabase.from('repairs').insert(payload).select().single();
+              if (error) throw error;
+              // replace any local job with that job_number / temp id
+              jobs = jobs.map(j => (j.temp_local_id && j.temp_local_id === q.payload.temp_local_id) ? data : j);
+              // ensure job has remote id
             } else if (q.type === 'update') {
-              await supabase.from('repairs').update(q.payload.changes).eq('id', q.payload.id);
+              const payload = q.payload;
+              const id = payload.id;
+              if (!id || String(id).length > 12) {
+                // likely local temp id -> update by job_number
+                await supabase.from('repairs').update(payload.changes).eq('job_number', payload.job_number);
+              } else {
+                await supabase.from('repairs').update(payload.changes).eq('id', id);
+              }
             } else if (q.type === 'delete') {
               await supabase.from('repairs').delete().eq('id', q.payload.id);
             }
           } else if (q.table === 'sales') {
             if (q.type === 'insert') {
-              await supabase.from('sales').insert(q.payload);
+              const payload = {...q.payload}; delete payload.id;
+              await supabase.from('sales').insert(payload);
             } else if (q.type === 'update') {
               await supabase.from('sales').update(q.payload.changes).eq('id', q.payload.id);
             } else if (q.type === 'delete') {
@@ -167,661 +309,711 @@
             }
           } else if (q.table === 'inventory') {
             if (q.type === 'insert') {
-              await supabase.from('inventory').insert(q.payload);
+              const payload = {...q.payload}; delete payload.id;
+              await supabase.from('inventory').insert(payload);
             } else if (q.type === 'update') {
               await supabase.from('inventory').update(q.payload.changes).eq('id', q.payload.id);
             } else if (q.type === 'delete') {
               await supabase.from('inventory').delete().eq('id', q.payload.id);
             }
           }
-          // remove processed from syncQueue
+          // success - remove the processed head of queue
           syncQueue.shift();
-          saveLocal();
+          localStorage.setItem(LS_QUEUE, JSON.stringify(syncQueue));
         } catch (err) {
-          console.error('Queue item failed', q, err);
-          failed.push(q);
-          // on error, break and try later
-          break;
+          console.error('Queue flush error', err, q);
+          setSyncBadge('offline');
+          return; // stop processing further and try later
         }
       }
-
-      if (syncQueue.length === 0) {
-        setSyncStatus('online','ONLINE');
-        localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-        lastSyncEl.textContent = 'Last sync: ' + localStorage.getItem('pos_last_sync');
-      } else {
-        setSyncStatus('offline','OFFLINE');
-      }
+      // finished
+      setSyncBadge('online');
+      localStorage.setItem(lastSyncKey, new Date().toLocaleString());
+      saveLocalJobs();
     }
 
-    // Realtime subscriptions
-    async function setupRealtime() {
-      // Repairs
-      await supabase.channel('public:repairs')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'repairs' }, payload => {
-          // payload: { eventType, new, old }
+    // Realtime handling
+    async function subscribeRealtime() {
+      try {
+        // create channels for each table
+        await supabase.channel('public:repairs').on('postgres_changes', { event: '*', schema: 'public', table: 'repairs' }, payload => {
+          // payload.eventType: INSERT, UPDATE, DELETE
           handleRemoteChange('repairs', payload);
         }).subscribe();
 
-      // Sales
-      await supabase.channel('public:sales')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => {
+        await supabase.channel('public:sales').on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, payload => {
           handleRemoteChange('sales', payload);
         }).subscribe();
 
-      // Inventory
-      await supabase.channel('public:inventory')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
+        await supabase.channel('public:inventory').on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, payload => {
           handleRemoteChange('inventory', payload);
         }).subscribe();
+      } catch (err) {
+        console.warn('Realtime subscribe failed', err);
+      }
     }
 
     function handleRemoteChange(table, payload) {
-      // Update local arrays and UI when someone changes DB elsewhere
       const evt = payload.eventType || payload.event;
-      const recordNew = payload.new || payload.record || null;
-      const recordOld = payload.old || null;
-
+      const recordNew = payload.new || payload.record || payload.new;
+      const recordOld = payload.old || payload.old;
       if (table === 'repairs') {
-        if (evt === 'INSERT' || evt === 'INSERT') {
-          repairs = [recordNew, ...repairs.filter(r=>r.id!==recordNew.id)];
+        if (evt === 'INSERT') {
+          // ensure not duplicate
+          jobs = [recordNew, ...jobs.filter(j => j.id !== recordNew.id)];
         } else if (evt === 'UPDATE') {
-          repairs = repairs.map(r => r.id === recordNew.id ? recordNew : r);
+          jobs = jobs.map(j => (j.id === recordNew.id || j.job_number === recordNew.job_number) ? recordNew : j);
         } else if (evt === 'DELETE') {
-          repairs = repairs.filter(r => r.id !== recordOld.id);
+          jobs = jobs.filter(j => j.id !== recordOld.id);
         }
-        saveLocal();
-        if (currentTab === 'repairs') renderRepairs();
       } else if (table === 'sales') {
-        if (evt === 'INSERT') {
-          sales = [recordNew, ...sales.filter(s=>s.id!==recordNew.id)];
-        } else if (evt === 'UPDATE') {
-          sales = sales.map(s => s.id === recordNew.id ? recordNew : s);
-        } else if (evt === 'DELETE') {
-          sales = sales.filter(s => s.id !== recordOld.id);
-        }
-        saveLocal();
-        if (currentTab === 'sales') renderSales();
+        if (evt === 'INSERT') sales = [recordNew, ...sales.filter(s => s.id !== recordNew.id)];
+        else if (evt === 'UPDATE') sales = sales.map(s => s.id === recordNew.id ? recordNew : s);
+        else if (evt === 'DELETE') sales = sales.filter(s => s.id !== recordOld.id);
       } else if (table === 'inventory') {
-        if (evt === 'INSERT') {
-          inventory = [recordNew, ...inventory.filter(i=>i.id!==recordNew.id)];
-        } else if (evt === 'UPDATE') {
-          inventory = inventory.map(i => i.id === recordNew.id ? recordNew : i);
-        } else if (evt === 'DELETE') {
-          inventory = inventory.filter(i => i.id !== recordOld.id);
-        }
-        saveLocal();
-        if (currentTab === 'inventory') renderInventory();
+        if (evt === 'INSERT') inventory = [recordNew, ...inventory.filter(i => i.id !== recordNew.id)];
+        else if (evt === 'UPDATE') inventory = inventory.map(i => i.id === recordNew.id ? recordNew : i);
+        else if (evt === 'DELETE') inventory = inventory.filter(i => i.id !== recordOld.id);
       }
-
-      localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-      lastSyncEl.textContent = 'Last sync: ' + localStorage.getItem('pos_last_sync');
-      setSyncStatus('online','ONLINE');
+      saveLocalJobs();
+      renderJobs();
+      localStorage.setItem(lastSyncKey, new Date().toLocaleString());
+      setSyncBadge('online');
     }
 
-    // Load initial data from Supabase, fallback to localStorage
-    async function loadInitialData() {
-      setSyncStatus('syncing','LOADING...');
+    // Load from Supabase (initial)
+    async function loadFromCloud() {
+      setSyncBadge('syncing');
       try {
-        const { data: repData, error: repErr } = await supabase.from('repairs').select('*').order('id', { ascending: false }).limit(1000);
-        if (repErr) throw repErr;
-        repairs = repData || [];
-      } catch (err) {
-        console.warn('Failed loading repairs from Supabase, using local copy', err);
-        repairs = JSON.parse(localStorage.getItem(LS_REPAIRS) || '[]');
-      }
+        const { data:repData, error:repErr } = await supabase.from('repairs').select('*').order('id',{ascending:false}).limit(1000);
+        if (!repErr && repData) jobs = repData;
+      } catch (e) { console.warn('Load repairs failed', e); }
 
       try {
-        const { data: salesData, error: salesErr } = await supabase.from('sales').select('*').order('id', { ascending: false }).limit(1000);
-        if (salesErr) throw salesErr;
-        sales = salesData || [];
-      } catch (err) {
-        console.warn('Failed loading sales from Supabase, using local copy', err);
-        sales = JSON.parse(localStorage.getItem(LS_SALES) || '[]');
-      }
+        const { data:salesData, error:salesErr } = await supabase.from('sales').select('*').order('id',{ascending:false}).limit(1000);
+        if (!salesErr && salesData) sales = salesData;
+      } catch (e) { console.warn('Load sales failed', e); }
 
       try {
-        const { data: invData, error: invErr } = await supabase.from('inventory').select('*').order('id', { ascending: false }).limit(1000);
-        if (invErr) throw invErr;
-        inventory = invData || [];
-      } catch (err) {
-        console.warn('Failed loading inventory from Supabase, using local copy', err);
-        inventory = JSON.parse(localStorage.getItem(LS_INVENTORY) || '[]');
-      }
+        const { data:invData, error:invErr } = await supabase.from('inventory').select('*').order('id',{ascending:false}).limit(1000);
+        if (!invErr && invData) inventory = invData;
+      } catch (e) { console.warn('Load inventory failed', e); }
 
-      saveLocal();
-      localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-      lastSyncEl.textContent = 'Last sync: ' + localStorage.getItem('pos_last_sync');
-      setSyncStatus(navigator.onLine ? 'online' : 'offline', navigator.onLine ? 'ONLINE' : 'OFFLINE');
-      renderCurrentTab();
+      saveLocalJobs();
+      localStorage.setItem(lastSyncKey, new Date().toLocaleString());
+      setSyncBadge('online');
     }
 
-    // UI rendering functions for each tab
-    function renderCurrentTab(){ if (currentTab==='repairs') renderRepairs(); if (currentTab==='sales') renderSales(); if (currentTab==='inventory') renderInventory(); }
-
-    // ---------- REPAIRS UI ----------
-    function renderRepairs() {
-      formPanel.innerHTML = repairFormHTML();
-      mainContent.innerHTML = '';
-      if (repairs.length === 0) {
-        mainContent.innerHTML = '<p class="small">No repair jobs yet.</p>';
-        attachRepairFormHandlers();
+    // ---------- Render UI (keeps original look) ----------
+    function renderJobs(filter='') {
+      jobListEl.innerHTML = '';
+      if (!jobs || jobs.length === 0) {
+        jobListEl.innerHTML = '<p>No jobs yet. Add your first repair!</p>';
         return;
       }
-      repairs.forEach(job => {
-        const due = (job.repair_price||job.repair_price===0) ? (job.repair_price - (job.amount_paid||0)) : 0;
-        const wrapper = document.createElement('div');
-        wrapper.className = 'job';
-        wrapper.innerHTML = `
-          <strong>${job.customer_name} <span class="small">(${job.customer_phone||'—'})</span></strong>
-          <div class="small"># ${job.job_number || job.jobNumber || job.jobNumber}</div>
-          <div class="small">Device: ${job.device_brand||''} ${job.device_model||''}</div>
-          <div class="small">Status: ${job.status || 'Pending'} | Price: ${formatLKR(Number(job.repair_price||0))} | Paid: ${formatLKR(Number(job.amount_paid||0))}</div>
-          <div class="actions">
-            <button class="btn-complete">✅ Complete</button>
-            <button class="btn-edit btn-secondary">✏️ Edit</button>
-            <button class="btn-sms btn-secondary">📲 SMS</button>
-            <button class="btn-print btn-secondary">🧾 Receipt</button>
-          </div>`;
-        // Button handlers
-        wrapper.querySelector('.btn-complete').addEventListener('click', ()=>openCompleteModal(job));
-        wrapper.querySelector('.btn-edit').addEventListener('click', ()=>openEditRepair(job));
-        wrapper.querySelector('.btn-sms').addEventListener('click', ()=>sendRepairSMS(job));
-        wrapper.querySelector('.btn-print').addEventListener('click', ()=>printRepairReceipt(job));
-        mainContent.appendChild(wrapper);
+
+      let filteredJobs = jobs.slice();
+
+      if (currentTab === 'active') filteredJobs = filteredJobs.filter(j => j.status !== 'Delivered');
+
+      if (filter) {
+        const term = filter.toLowerCase();
+        filteredJobs = filteredJobs.filter(job =>
+          (job.customerName || job.customer_name || '').toString().toLowerCase().includes(term) ||
+          (job.customerPhone || job.customer_phone || '').toString().includes(term) ||
+          ((job.jobNumber || job.job_number || '')).toString().toLowerCase().includes(term)
+        );
+      }
+
+      filteredJobs.sort((a,b) => {
+        // prefer remote id order; fallback to createdAt / id
+        const ta = new Date(a.createdAt || a.created_at || 0).getTime() || Number(a.id||0);
+        const tb = new Date(b.createdAt || b.created_at || 0).getTime() || Number(b.id||0);
+        return tb - ta;
       });
-      attachRepairFormHandlers();
+
+      if (filteredJobs.length === 0) {
+        jobListEl.innerHTML = `<p>❌ No ${currentTab} jobs found.</p>`;
+        return;
+      }
+
+      filteredJobs.forEach(job => {
+        const repairPrice = Number(job.repairPrice || job.repair_price || 0);
+        const amountPaid = Number(job.amountPaid || job.amount_paid || 0);
+        const balance = repairPrice - amountPaid;
+
+        let paymentStatus = "Unpaid", paymentClass = "unpaid";
+        if (balance <= 0 && repairPrice > 0) { paymentStatus = "Paid"; paymentClass = "paid"; }
+        else if (amountPaid > 0) { paymentStatus = "Partial"; paymentClass = "partial"; }
+
+        const jobEl = document.createElement('div');
+        jobEl.className = 'job';
+        const customerName = job.customerName || job.customer_name || '';
+        const customerPhone = job.customerPhone || job.customer_phone || '';
+        const customerAddress = job.customerAddress || job.customer_address || '';
+        const deviceBrand = job.deviceBrand || job.device_brand || '';
+        const deviceModel = job.deviceModel || job.device_model || '';
+        const issueDesc = job.issueDesc || job.issue_desc || '';
+        const status = job.status || 'Pending';
+        const jobNumber = job.jobNumber || job.job_number || '';
+
+        jobEl.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong>👨‍🔧 ${customerName}</strong>
+            <span class="job-number">${jobNumber}</span>
+          </div>
+          <strong>📞 ${customerPhone}</strong><br>
+          <strong>🏠 Address:</strong> ${customerAddress || 'N/A'}<br>
+          <strong>📱 ${deviceBrand} ${deviceModel}</strong><br>
+          <strong>❗ Issue:</strong> ${issueDesc || 'N/A'}<br>
+          <strong>📅 Received:</strong> ${job.repairDate || job.repair_date || ''} | <strong>🚚 Expected:</strong> ${job.deliveryDate || job.delivery_date || ''}<br>
+          <strong>🏷️ Status:</strong>
+          <span class="job-status ${status==='Delivered'?'delivered':status==='Ready for Pickup'?'ready':status==='In Progress'?'progress':'pending'}">
+            ${status}
+          </span><br>
+          <strong>💰 Price: ${formatLKR(repairPrice)} | Paid: ${formatLKR(amountPaid)} | Due: ${formatLKR(balance)}</strong><br>
+          <strong>💳 Payment:</strong> <span class="payment-status ${paymentClass}">${paymentStatus}</span><br>
+          <small>💾 Saved: ${job.createdAt || job.created_at || ''}</small>
+          <div class="job-actions" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+          <hr>
+        `;
+
+        const actionsContainer = jobEl.querySelector('.job-actions');
+
+        // Complete Job Button
+        if (status !== 'Delivered' && status !== 'Ready for Pickup') {
+          const completeBtn = document.createElement('button');
+          completeBtn.className = 'complete-btn';
+          completeBtn.textContent = '✅ Complete Repair';
+          completeBtn.addEventListener('click', () => {
+            currentJobId = job.jobNumber || job.job_number || job.id;
+            modalPrice.value = repairPrice || '';
+            modalPaid.value = amountPaid || '';
+            completeModal.style.display = 'flex';
+            modalPrice.focus();
+            // store id in modal via dataset
+            completeModal.dataset.jobId = job.id || job.job_number || job.jobNumber;
+          });
+          actionsContainer.appendChild(completeBtn);
+        }
+
+        // Mark as Delivered
+        if (status === 'Ready for Pickup') {
+          const deliverBtn = document.createElement('button');
+          deliverBtn.className = 'deliver-btn';
+          deliverBtn.textContent = '📦 Mark as Delivered';
+          deliverBtn.addEventListener('click', async () => {
+            const found = jobs.find(j => (j.jobNumber || j.job_number || j.id) === jobNumber || j.id === job.id);
+            if (!found) return alert('Job not found locally');
+            const bal = (Number(found.repairPrice || found.repair_price || 0) - Number(found.amountPaid || found.amount_paid || 0));
+            if (bal > 0) return alert("⚠️ Cannot mark as Delivered until full payment is received.");
+            // update status
+            found.status = 'Delivered';
+            found.updated_at = nowISO();
+            await updateJob(found);
+            // send SMS
+            const dsms = generateDeliveredSMSText(found.customerName || found.customer_name, found.jobNumber || found.job_number, found.repairPrice||found.repair_price, found.amountPaid||found.amount_paid);
+            sendSMS(found.customerPhone || found.customer_phone, dsms);
+            alert(`✅ Job ${found.jobNumber||found.job_number||found.id} marked as DELIVERED. SMS opened.`);
+          });
+          actionsContainer.appendChild(deliverBtn);
+        }
+
+        // Edit Price & Payment
+        const editPaymentBtn = document.createElement('button');
+        editPaymentBtn.className = 'edit-payment-btn';
+        editPaymentBtn.textContent = '✏️ Edit Price & Payment';
+        editPaymentBtn.addEventListener('click', () => {
+          currentJobId = job.jobNumber || job.job_number || job.id;
+          editPrice.value = repairPrice || '';
+          editPaid.value = amountPaid || '';
+          paymentModal.style.display = 'flex';
+          paymentModal.dataset.jobId = job.jobNumber || job.job_number || job.id;
+        });
+        actionsContainer.appendChild(editPaymentBtn);
+
+        // Edit Job Details
+        const editBtn = document.createElement('button');
+        editBtn.className = 'edit-btn';
+        editBtn.textContent = '📝 Edit Job Details';
+        editBtn.addEventListener('click', () => {
+          currentJobId = job.jobNumber || job.job_number || job.id;
+          // fill edit modal fields from job
+          editJobId.value = job.id || '';
+          editJobNumber.value = job.jobNumber || job.job_number || '';
+          editCustomerName.value = job.customerName || job.customer_name || '';
+          editCustomerPhone.value = job.customerPhone || job.customer_phone || '';
+          editCustomerAddress.value = job.customerAddress || job.customer_address || '';
+          editDeviceBrand.value = job.deviceBrand || job.device_brand || '';
+          editDeviceModel.value = job.deviceModel || job.device_model || '';
+          editIssueDesc.value = job.issueDesc || job.issue_desc || '';
+          editRepairDate.value = job.repairDate || job.repair_date || '';
+          editDeliveryDate.value = job.deliveryDate || job.delivery_date || '';
+          editStatus.value = status;
+          editJobModal.style.display = 'flex';
+          editCustomerName.focus();
+        });
+        actionsContainer.appendChild(editBtn);
+
+        // Send SMS
+        const smsBtn = document.createElement('button');
+        smsBtn.className = 'sms-btn';
+        smsBtn.textContent = '📲 Send SMS Update';
+        if (!customerPhone) { smsBtn.disabled = true; smsBtn.style.opacity = 0.5; }
+        smsBtn.addEventListener('click', () => {
+          const smsText = generateDetailedSMSText({
+            customerName: job.customerName || job.customer_name,
+            customerPhone: job.customerPhone || job.customer_phone,
+            deviceBrand: job.deviceBrand || job.device_brand,
+            deviceModel: job.deviceModel || job.device_model,
+            status: job.status || job.status,
+            repairPrice: job.repairPrice || job.repair_price,
+            amountPaid: job.amountPaid || job.amount_paid,
+            jobNumber: job.jobNumber || job.job_number
+          });
+          sendSMS(customerPhone, smsText);
+        });
+        actionsContainer.appendChild(smsBtn);
+
+        // Receipt
+        const receiptBtn = document.createElement('button');
+        receiptBtn.className = 'receipt-btn';
+        receiptBtn.textContent = '🧾 Print Receipt';
+        receiptBtn.addEventListener('click', () => {
+          const html = generateReceiptHTML({
+            jobNumber: job.jobNumber || job.job_number,
+            customerName: customerName,
+            customerPhone: customerPhone,
+            customerAddress: customerAddress,
+            deviceBrand: deviceBrand,
+            deviceModel: deviceModel,
+            issueDesc: issueDesc,
+            status: status,
+            repairPrice: repairPrice,
+            amountPaid: amountPaid
+          });
+          receiptContent.innerHTML = `<pre style="white-space: pre-wrap; word-wrap: break-word; margin:0;">${html}</pre>`;
+          setTimeout(()=>{ window.print(); }, 150);
+        });
+        actionsContainer.appendChild(receiptBtn);
+
+        jobListEl.appendChild(jobEl);
+      });
     }
 
-    function repairFormHTML() {
-      return `
-        <h3>🔧 New Repair Job</h3>
-        <label>Customer Name *</label><input id="r_customerName" />
-        <label>Phone *</label><input id="r_customerPhone" />
-        <label>Address</label><textarea id="r_customerAddress" rows="2"></textarea>
-        <label>Brand</label><input id="r_deviceBrand" />
-        <label>Model *</label><input id="r_deviceModel" />
-        <label>Issue</label><textarea id="r_issueDesc" rows="2"></textarea>
-        <label>Received Date</label><input id="r_repairDate" type="date" />
-        <label>Expected Delivery</label><input id="r_deliveryDate" type="date" />
-        <label>Status</label>
-        <select id="r_status"><option>Pending</option><option>In Progress</option><option>Ready for Pickup</option><option>Delivered</option></select>
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button id="r_save">💾 Save</button>
-          <button id="r_clear" class="btn-secondary">Clear</button>
-        </div>
-        <hr>
-        <div class="small">Tip: Complete a job to set price & send ready SMS.</div>
-      `;
+    // ---------- CRUD operations connected to Supabase ----------
+    // Helper to create job object consistent format
+    function normalizeJobFromForm() {
+      return {
+        jobNumber: generateJobNumber(),
+        customerName: document.getElementById('customerName').value.trim(),
+        customerPhone: document.getElementById('customerPhone').value.trim(),
+        customerAddress: document.getElementById('customerAddress').value.trim(),
+        deviceBrand: document.getElementById('deviceBrand').value.trim(),
+        deviceModel: document.getElementById('deviceModel').value.trim(),
+        issueDesc: document.getElementById('issueDesc').value.trim(),
+        repairPrice: 0,
+        amountPaid: 0,
+        repairDate: document.getElementById('repairDate').value || null,
+        deliveryDate: document.getElementById('deliveryDate').value || null,
+        status: document.getElementById('status').value || 'Pending',
+        createdAt: new Date().toLocaleString()
+      };
     }
 
-    function attachRepairFormHandlers() {
-      // set default dates
-      const rRepairDate = document.getElementById('r_repairDate');
-      const rDeliveryDate = document.getElementById('r_deliveryDate');
-      if (rRepairDate && !rRepairDate.value) rRepairDate.valueAsDate = new Date();
-      if (rDeliveryDate && !rDeliveryDate.value) rDeliveryDate.valueAsDate = new Date(Date.now()+3*24*3600*1000);
+    // Save job (insert)
+    saveBtn.addEventListener('click', async () => {
+      const job = normalizeJobFromForm();
+      if (!job.customerName || !job.customerPhone || !job.deviceModel) {
+        alert("⚠️ Please fill Customer Name, Phone, and Device Model!");
+        return;
+      }
 
-      const saveBtn = document.getElementById('r_save');
-      const clearBtn = document.getElementById('r_clear');
+      // If online, insert to Supabase and use returned record
+      if (navigator.onLine) {
+        try {
+          const payload = {
+            job_number: job.jobNumber,
+            customer_name: job.customerName,
+            customer_phone: job.customerPhone,
+            customer_address: job.customerAddress,
+            device_brand: job.deviceBrand,
+            device_model: job.deviceModel,
+            issue_desc: job.issueDesc,
+            repair_price: job.repairPrice,
+            amount_paid: job.amountPaid,
+            repair_date: job.repairDate,
+            delivery_date: job.deliveryDate,
+            status: job.status,
+            created_at: new Date().toISOString()
+          };
+          const { data, error } = await supabase.from('repairs').insert(payload).select().single();
+          if (error) throw error;
+          // add to local jobs (uses remote id)
+          jobs.unshift({
+            id: data.id,
+            jobNumber: data.job_number,
+            customerName: data.customer_name,
+            customerPhone: data.customer_phone,
+            customerAddress: data.customer_address,
+            deviceBrand: data.device_brand,
+            deviceModel: data.device_model,
+            issueDesc: data.issue_desc,
+            repairPrice: data.repair_price,
+            amountPaid: data.amount_paid,
+            repairDate: data.repair_date,
+            deliveryDate: data.delivery_date,
+            status: data.status,
+            createdAt: data.created_at
+          });
+          saveLocalJobs();
+          renderJobs();
+          // open SMS
+          const receivedSMS = generateReceivedSMSText(job.customerName, job.deviceBrand, job.deviceModel, job.jobNumber);
+          sendSMS(job.customerPhone, receivedSMS);
+          alert(`✅ Repair Job ${job.jobNumber} Saved & SMS opened.`);
+          resetForm();
+          localStorage.setItem(lastSyncKey, new Date().toLocaleString());
+          setSyncBadge('online');
+        } catch (err) {
+          console.error('Insert to Supabase failed', err);
+          // fallback to local queue
+          job.temp_local_id = Date.now();
+          jobs.unshift(job);
+          pushQueue({ type:'insert', table:'repairs', payload: job });
+          saveLocalJobs();
+          renderJobs();
+          alert('Saved locally. Will sync when online.');
+          setSyncBadge('offline');
+        }
+      } else {
+        // offline -> queue local insert
+        job.temp_local_id = Date.now();
+        jobs.unshift(job);
+        pushQueue({ type:'insert', table:'repairs', payload: job });
+        saveLocalJobs();
+        renderJobs();
+        alert('Saved locally. Will sync when online.');
+        setSyncBadge('offline');
+        resetForm();
+      }
+    });
 
-      saveBtn.onclick = async () => {
-        const job = {
-          job_number: generateJobNumber(),
-          customer_name: document.getElementById('r_customerName').value.trim(),
-          customer_phone: document.getElementById('r_customerPhone').value.trim(),
-          customer_address: document.getElementById('r_customerAddress').value.trim(),
-          device_brand: document.getElementById('r_deviceBrand').value.trim(),
-          device_model: document.getElementById('r_deviceModel').value.trim(),
-          issue_desc: document.getElementById('r_issueDesc').value.trim(),
-          repair_price: 0,
-          amount_paid: 0,
-          repair_date: document.getElementById('r_repairDate').value || null,
-          delivery_date: document.getElementById('r_deliveryDate').value || null,
-          status: document.getElementById('r_status').value || 'Pending',
-          created_at: nowISO()
-        };
+    // Update job generic
+    async function updateJob(job) {
+      // ensure fields names match remote table
+      const payload = {
+        customer_name: job.customerName || job.customer_name,
+        customer_phone: job.customerPhone || job.customer_phone,
+        customer_address: job.customerAddress || job.customer_address,
+        device_brand: job.deviceBrand || job.device_brand,
+        device_model: job.deviceModel || job.device_model,
+        issue_desc: job.issueDesc || job.issue_desc,
+        repair_price: job.repairPrice || job.repair_price,
+        amount_paid: job.amountPaid || job.amount_paid,
+        repair_date: job.repairDate || job.repair_date,
+        delivery_date: job.deliveryDate || job.delivery_date,
+        status: job.status,
+        updated_at: new Date().toISOString()
+      };
 
-        if (!job.customer_name || !job.customer_phone || !job.device_model) {
-          alert('Please fill Name, Phone and Model.');
+      // update local
+      jobs = jobs.map(j => {
+        if ((j.jobNumber || j.job_number || j.id) === (job.jobNumber || job.job_number || job.id)) return {...j, ...job};
+        return j;
+      });
+      saveLocalJobs();
+      renderJobs();
+
+      // if online try remote update
+      if (navigator.onLine) {
+        try {
+          if (job.id && Number(job.id)) {
+            await supabase.from('repairs').update(payload).eq('id', job.id);
+          } else if (job.jobNumber || job.job_number) {
+            await supabase.from('repairs').update(payload).eq('job_number', job.jobNumber || job.job_number);
+          } else {
+            // fallback queue
+            pushQueue({ type:'update', table:'repairs', payload:{ id: job.id, job_number: job.jobNumber, changes: payload } });
+            setSyncBadge('offline');
+          }
+          localStorage.setItem(lastSyncKey, new Date().toLocaleString());
+          setSyncBadge('online');
+        } catch (err) {
+          console.error('Update remote failed', err);
+          pushQueue({ type:'update', table:'repairs', payload:{ id: job.id, job_number: job.jobNumber, changes: payload } });
+          setSyncBadge('offline');
+        }
+      } else {
+        pushQueue({ type:'update', table:'repairs', payload:{ id: job.id, job_number: job.jobNumber, changes: payload } });
+        setSyncBadge('offline');
+      }
+    }
+
+    // Delete job (used if you implement)
+    async function deleteJob(job) {
+      jobs = jobs.filter(j => j.jobNumber !== job.jobNumber && j.job_number !== job.jobNumber && j.id !== job.id);
+      saveLocalJobs();
+      if (navigator.onLine && job.id) {
+        try { await supabase.from('repairs').delete().eq('id', job.id); }
+        catch(e) { pushQueue({ type:'delete', table:'repairs', payload:{ id: job.id } }); setSyncBadge('offline'); }
+      } else {
+        pushQueue({ type:'delete', table:'repairs', payload:{ id: job.id } });
+        setSyncBadge('offline');
+      }
+      renderJobs();
+    }
+
+    // ---------- Modal actions ----------
+    modalSaveBtn.addEventListener('click', async () => {
+      const jobKey = completeModal.dataset.jobId;
+      const price = parseFloat(modalPrice.value) || 0;
+      const paid = parseFloat(modalPaid.value) || 0;
+      // find job by jobNumber or id
+      const job = jobs.find(j => (j.jobNumber===jobKey || j.job_number===jobKey || String(j.id)===String(jobKey) || j.temp_local_id==jobKey));
+      if (!job) { alert('Job not found'); completeModal.style.display='none'; return; }
+      job.repairPrice = price;
+      job.amountPaid = paid;
+      job.status = 'Ready for Pickup';
+      job.updated_at = new Date().toISOString();
+      await updateJob(job);
+      // send ready SMS
+      const readySMS = generateReadySMSText(job.customerName || job.customer_name, job.jobNumber || job.job_number, job.repairPrice || job.repair_price, job.amountPaid || job.amount_paid);
+      sendSMS(job.customerPhone || job.customer_phone, readySMS);
+      alert('🎉 Job marked as READY FOR PICKUP! SMS opened.');
+      completeModal.style.display = 'none';
+    });
+    modalCancelBtn.addEventListener('click', ()=> completeModal.style.display='none');
+
+    editSaveBtn.addEventListener('click', async () => {
+      const jobKey = editJobNumber.value || editJobId.value;
+      const job = jobs.find(j => (j.jobNumber===jobKey || j.job_number===jobKey || String(j.id)===String(jobKey)));
+      if (!job) { alert('Job not found'); editJobModal.style.display='none'; return; }
+      job.customerName = editCustomerName.value.trim();
+      job.customerPhone = editCustomerPhone.value.trim();
+      job.customerAddress = editCustomerAddress.value.trim();
+      job.deviceBrand = editDeviceBrand.value.trim();
+      job.deviceModel = editDeviceModel.value.trim();
+      job.issueDesc = editIssueDesc.value.trim();
+      job.repairDate = editRepairDate.value;
+      job.deliveryDate = editDeliveryDate.value;
+      const newStatus = editStatus.value;
+      // validate
+      if (!job.customerName || !job.customerPhone || !job.deviceModel) {
+        alert("⚠️ Please fill Customer Name, Phone, and Device Model!");
+        return;
+      }
+      // delivered validation
+      if (newStatus === "Delivered") {
+        const balance = Number(job.repairPrice || job.repair_price || 0) - Number(job.amountPaid || job.amount_paid || 0);
+        if (balance > 0) {
+          alert("⚠️ Cannot set status to 'Delivered' until full payment is received.");
           return;
         }
+        const deliveredSMS = generateDeliveredSMSText(job.customerName, job.jobNumber || job.job_number, job.repairPrice || job.repair_price, job.amountPaid || job.amount_paid);
+        sendSMS(job.customerPhone, deliveredSMS);
+        alert(`✅ Job marked as DELIVERED. SMS opened.`);
+      }
+      job.status = newStatus;
+      job.updated_at = new Date().toISOString();
+      await updateJob(job);
+      editJobModal.style.display='none';
+    });
+    editCancelBtn.addEventListener('click', ()=> paymentModal.style.display='none');
+    cancelEditBtn.addEventListener('click', ()=> editJobModal.style.display='none');
 
-        // optimistic local append
-        // If online try Supabase insert, otherwise queue
-        try {
-          if (navigator.onLine) {
-            const { data, error } = await supabase.from('repairs').insert(job).select().single();
-            if (error) throw error;
-            repairs.unshift(data);
-            saveLocal();
-            renderRepairs();
-            localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-            setSyncStatus('online','ONLINE');
-            // send received SMS
-            const sms = generateReceivedSMSText(data.customer_name, data.device_brand, data.device_model, data.job_number);
-            sendSMS(data.customer_phone, sms);
-            alert('Saved to cloud and SMS opened.');
-          } else {
-            // local fallback
-            job.id = Date.now(); // local temporary id
-            repairs.unshift(job);
-            pushQueue({ type:'insert', table:'repairs', payload:job });
-            saveLocal();
-            renderRepairs();
-            alert('Saved locally. Will sync when online.');
-          }
-        } catch (err) {
-          console.error(err);
-          // fallback to local queue
-          job.id = Date.now();
-          repairs.unshift(job);
-          pushQueue({ type:'insert', table:'repairs', payload:job });
-          saveLocal();
-          renderRepairs();
-          setSyncStatus('offline','OFFLINE');
-          alert('Saved locally (error pushing to cloud). Will sync later.');
-        }
-        clearRepairForm();
-      };
-
-      clearBtn.onclick = clearRepairForm;
-    }
-
-    // repair helpers (complete, edit, sms, receipt)
-    function openCompleteModal(job) {
-      const price = prompt('Repair price (LKR)', job.repair_price || 0);
-      if (price === null) return;
-      const paid = prompt('Amount paid (LKR)', job.amount_paid || 0);
-      if (paid === null) return;
-      const pNum = Number(price) || 0, pPaid = Number(paid) || 0;
-      job.repair_price = pNum;
-      job.amount_paid = pPaid;
-      job.status = 'Ready for Pickup';
+    // Edit payment modal save
+    document.getElementById('editSaveBtn').addEventListener('click', async () => {
+      const jobKey = paymentModal.dataset.jobId;
+      const job = jobs.find(j => (j.jobNumber===jobKey || j.job_number===jobKey || String(j.id)===String(jobKey)));
+      if (!job) { alert('Job not found'); paymentModal.style.display='none'; return; }
+      const price = parseFloat(editPrice.value) || 0;
+      const paid = parseFloat(editPaid.value) || 0;
+      job.repairPrice = price;
+      job.amountPaid = paid;
       job.updated_at = nowISO();
-      updateRepair(job);
-      // send ready SMS
-      const msg = generateReadySMSText(job.customer_name, job.job_number, job.repair_price, job.amount_paid);
-      sendSMS(job.customer_phone, msg);
-      alert('Job marked Ready & SMS opened.');
-    }
+      await updateJob(job);
+      alert('✅ Price & Payment updated!');
+      paymentModal.style.display='none';
+    });
 
-    function openEditRepair(job) {
-      const changedName = prompt('Customer name', job.customer_name||'') || job.customer_name;
-      const changedPhone = prompt('Customer phone', job.customer_phone||'') || job.customer_phone;
-      const changedModel = prompt('Device model', job.device_model||'') || job.device_model;
-      job.customer_name = changedName;
-      job.customer_phone = changedPhone;
-      job.device_model = changedModel;
-      job.updated_at = nowISO();
-      updateRepair(job);
-      alert('Updated locally & queued if offline.');
-    }
-
-    function sendRepairSMS(job) {
-      const txt = generateDetailedSMSText(job);
-      sendSMS(job.customer_phone, txt);
-    }
-
-    function printRepairReceipt(job) {
-      const html = generateReceiptHTML(job);
-      receiptContent.innerHTML = '<pre style="white-space:pre-wrap;font-family:monospace">'+html+'</pre>';
-      setTimeout(()=>{ window.print(); },100);
-    }
-
-    async function updateRepair(job) {
-      // update local array
-      repairs = repairs.map(r => (r.job_number === job.job_number || r.id === job.id) ? job : r);
-      saveLocal();
-
-      // update remote or queue
-      try {
-        if (navigator.onLine) {
-          const payload = {
-            customer_name: job.customer_name,
-            customer_phone: job.customer_phone,
-            customer_address: job.customer_address,
-            device_brand: job.device_brand,
-            device_model: job.device_model,
-            issue_desc: job.issue_desc,
-            repair_price: job.repair_price,
-            amount_paid: job.amount_paid,
-            repair_date: job.repair_date,
-            delivery_date: job.delivery_date,
-            status: job.status,
-            updated_at: nowISO()
-          };
-          // match on job_number if id is local temp
-          if (job.id && typeof job.id === 'number' && String(job.id).length > 12) {
-            // this is likely local temp id — use job_number to update remote (if remote exists)
-            await supabase.from('repairs').update(payload).eq('job_number', job.job_number);
-          } else {
-            await supabase.from('repairs').update(payload).eq('id', job.id);
-          }
-          localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-          setSyncStatus('online','ONLINE');
-        } else {
-          pushQueue({ type:'update', table:'repairs', payload:{ id: job.id, changes: job } });
-          setSyncStatus('offline','OFFLINE');
-        }
-      } catch (err) {
-        console.error('Update repair failed', err);
-        pushQueue({ type:'update', table:'repairs', payload:{ id: job.id, changes: job } });
-        setSyncStatus('offline','OFFLINE');
-      }
-    }
-
-    function clearRepairForm(){
-      document.getElementById('r_customerName').value='';
-      document.getElementById('r_customerPhone').value='';
-      document.getElementById('r_customerAddress').value='';
-      document.getElementById('r_deviceBrand').value='';
-      document.getElementById('r_deviceModel').value='';
-      document.getElementById('r_issueDesc').value='';
-      document.getElementById('r_status').value='Pending';
-    }
-
-    // ---------- SALES UI ----------
-    function renderSales() {
-      formPanel.innerHTML = salesFormHTML();
-      mainContent.innerHTML = '';
-      if (sales.length === 0) {
-        mainContent.innerHTML = '<p class="small">No sales recorded yet.</p>';
-        attachSalesFormHandlers();
-        return;
-      }
-      sales.forEach(sale => {
-        const el = document.createElement('div');
-        el.className = 'job';
-        el.innerHTML = `<strong>${sale.item}</strong><div class="small">Qty: ${sale.quantity} | Total: ${formatLKR(Number(sale.total||0))}</div>
-          <div class="actions">
-            <button class="btn-edit btn-secondary">✏️ Edit</button>
-            <button class="btn-delete btn-secondary">🗑️ Delete</button>
-          </div>`;
-        el.querySelector('.btn-edit').addEventListener('click', ()=>editSale(sale));
-        el.querySelector('.btn-delete').addEventListener('click', ()=>deleteSale(sale));
-        mainContent.appendChild(el);
+    // ---------- Search / Tabs / Export ----------
+    tabs.forEach(tab => {
+      tab.addEventListener('click', ()=> {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        renderJobs(searchInput.value.trim());
       });
-      attachSalesFormHandlers();
-    }
+    });
 
-    function salesFormHTML() {
-      return `
-        <h3>💰 Add Sale</h3>
-        <label>Item</label><input id="s_item" />
-        <label>Quantity</label><input id="s_qty" type="number" value="1" />
-        <label>Total (LKR)</label><input id="s_total" type="number" step="0.01" />
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button id="s_save">Add Sale</button>
-          <button id="s_clear" class="btn-secondary">Clear</button>
-        </div>
-      `;
-    }
+    exportBtn.addEventListener('click', () => {
+      if (!jobs || jobs.length === 0) { alert('No jobs to export!'); return; }
+      const dataStr = JSON.stringify(jobs, null, 2);
+      const blob = new Blob([dataStr], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'pathirage-electronics-jobs-' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
 
-    function attachSalesFormHandlers() {
-      document.getElementById('s_save').onclick = async () => {
-        const sale = {
-          item: document.getElementById('s_item').value.trim(),
-          quantity: Number(document.getElementById('s_qty').value) || 1,
-          total: Number(document.getElementById('s_total').value) || 0,
-          sale_date: nowISO()
-        };
-        if (!sale.item) { alert('Enter item name'); return; }
-        try {
-          if (navigator.onLine) {
-            const { data, error } = await supabase.from('sales').insert(sale).select().single();
-            if (error) throw error;
-            sales.unshift(data);
-            saveLocal();
-            renderSales();
-            localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-            setSyncStatus('online','ONLINE');
-          } else {
-            sale.id = Date.now();
-            sales.unshift(sale);
-            pushQueue({ type:'insert', table:'sales', payload:sale });
-            saveLocal();
-            renderSales();
-            setSyncStatus('offline','OFFLINE');
-            alert('Saved locally, will sync later.');
-          }
-        } catch (err) {
-          console.error(err);
-          sale.id = Date.now();
-          sales.unshift(sale);
-          pushQueue({ type:'insert', table:'sales', payload:sale });
-          saveLocal();
-          renderSales();
-          setSyncStatus('offline','OFFLINE');
-        }
-        clearSalesForm();
-      };
-      document.getElementById('s_clear').onclick = clearSalesForm;
-    }
+    searchBtn.addEventListener('click', ()=> renderJobs(searchInput.value.trim()));
+    searchInput.addEventListener('keyup', (e)=> { if (e.key === 'Enter') searchBtn.click(); });
+    clearSearchBtn.addEventListener('click', ()=> { searchInput.value=''; renderJobs(''); });
 
-    function clearSalesForm(){ document.getElementById('s_item').value=''; document.getElementById('s_qty').value='1'; document.getElementById('s_total').value=''; }
-    function editSale(sale){ const newTotal = prompt('Total (LKR)', sale.total||0); if (newTotal===null) return; sale.total = Number(newTotal)||0; sale.updated_at = nowISO(); updateSale(sale); }
-    function deleteSale(sale){ if (!confirm('Delete this sale?')) return; // local remove
-      sales = sales.filter(s=>s.id!==sale.id); saveLocal();
-      if (navigator.onLine && sale.id) supabase.from('sales').delete().eq('id', sale.id).then(()=>{ localStorage.setItem('pos_last_sync', new Date().toLocaleString()); });
-      else pushQueue({ type:'delete', table:'sales', payload:{ id: sale.id } });
-      renderSales();
-    }
-    async function updateSale(sale) {
-      saveLocal();
-      try {
-        if (navigator.onLine) {
-          await supabase.from('sales').update({ item: sale.item, quantity: sale.quantity, total: sale.total }).eq('id', sale.id);
-          localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-          setSyncStatus('online','ONLINE');
-        } else {
-          pushQueue({ type:'update', table:'sales', payload:{ id: sale.id, changes: sale } });
-          setSyncStatus('offline','OFFLINE');
-        }
-      } catch (err) {
-        pushQueue({ type:'update', table:'sales', payload:{ id: sale.id, changes: sale } });
-        setSyncStatus('offline','OFFLINE');
+    // storage event for cross-tab
+    window.addEventListener('storage', (e)=> {
+      if (e.key === STORAGE_KEY) {
+        jobs = JSON.parse(e.newValue || '[]');
+        renderJobs(searchInput.value.trim());
       }
-    }
-
-    // ---------- INVENTORY UI ----------
-    function renderInventory() {
-      formPanel.innerHTML = inventoryFormHTML();
-      mainContent.innerHTML = '';
-      if (inventory.length === 0) {
-        mainContent.innerHTML = '<p class="small">Inventory is empty.</p>';
-        attachInventoryFormHandlers();
-        return;
+      if (e.key === LS_QUEUE) {
+        syncQueue = JSON.parse(e.newValue || '[]');
       }
-      inventory.forEach(item => {
-        const el = document.createElement('div');
-        el.className = 'job';
-        el.innerHTML = `<strong>${item.name}</strong><div class="small">Stock: ${item.stock||0} | Price: ${formatLKR(Number(item.price||0))}</div>
-          <div class="actions">
-            <button class="btn-edit btn-secondary">✏️ Edit</button>
-            <button class="btn-delete btn-secondary">🗑️ Delete</button>
-          </div>`;
-        el.querySelector('.btn-edit').addEventListener('click', ()=>editInventory(item));
-        el.querySelector('.btn-delete').addEventListener('click', ()=>deleteInventory(item));
-        mainContent.appendChild(el);
-      });
-      attachInventoryFormHandlers();
-    }
+    });
 
-    function inventoryFormHTML() {
-      return `
-        <h3>📦 Add Inventory Item</h3>
-        <label>Name</label><input id="i_name" />
-        <label>Stock</label><input id="i_stock" type="number" value="1" />
-        <label>Price (LKR)</label><input id="i_price" type="number" step="0.01" />
-        <div style="margin-top:10px;display:flex;gap:8px">
-          <button id="i_save">Add Item</button>
-          <button id="i_clear" class="btn-secondary">Clear</button>
-        </div>
-      `;
-    }
-
-    function attachInventoryFormHandlers() {
-      document.getElementById('i_save').onclick = async () => {
-        const item = { name: document.getElementById('i_name').value.trim(), stock: Number(document.getElementById('i_stock').value)||0, price: Number(document.getElementById('i_price').value)||0, created_at: nowISO() };
-        if (!item.name) { alert('Enter item name'); return; }
-        try {
-          if (navigator.onLine) {
-            const { data, error } = await supabase.from('inventory').insert(item).select().single();
-            if (error) throw error;
-            inventory.unshift(data);
-            saveLocal();
-            renderInventory();
-            localStorage.setItem('pos_last_sync', new Date().toLocaleString());
-            setSyncStatus('online','ONLINE');
-          } else {
-            item.id = Date.now();
-            inventory.unshift(item);
-            pushQueue({ type:'insert', table:'inventory', payload:item });
-            saveLocal();
-            renderInventory();
-            setSyncStatus('offline','OFFLINE');
-            alert('Saved locally; will sync later.');
-          }
-        } catch (err) {
-          console.error(err);
-          item.id = Date.now();
-          inventory.unshift(item);
-          pushQueue({ type:'insert', table:'inventory', payload:item });
-          saveLocal();
-          renderInventory();
-          setSyncStatus('offline','OFFLINE');
-        }
-        clearInventoryForm();
-      };
-      document.getElementById('i_clear').onclick = clearInventoryForm;
-    }
-
-    function clearInventoryForm(){ document.getElementById('i_name').value=''; document.getElementById('i_stock').value='1'; document.getElementById('i_price').value=''; }
-    function editInventory(item){ const newName = prompt('Name', item.name||'') || item.name; const newStock = Number(prompt('Stock', item.stock||0)||item.stock); const newPrice = Number(prompt('Price', item.price||0)||item.price); item.name=newName; item.stock=newStock; item.price=newPrice; item.updated_at = nowISO(); updateInventory(item); }
-    function deleteInventory(item){ if (!confirm('Delete inventory item?')) return; inventory = inventory.filter(i=>i.id!==item.id); saveLocal(); if (navigator.onLine && item.id) supabase.from('inventory').delete().eq('id', item.id); else pushQueue({ type:'delete', table:'inventory', payload:{ id: item.id } }); renderInventory(); }
-    async function updateInventory(item){ saveLocal(); try{ if (navigator.onLine) { await supabase.from('inventory').update({ name:item.name, stock:item.stock, price:item.price }).eq('id', item.id); setSyncStatus('online','ONLINE'); } else { pushQueue({ type:'update', table:'inventory', payload:{ id:item.id, changes:item } }); setSyncStatus('offline','OFFLINE'); } } catch(e){ pushQueue({ type:'update', table:'inventory', payload:{ id:item.id, changes:item } }); setSyncStatus('offline','OFFLINE'); } }
-
-    // ---------- helpers ----------
-    function generateJobNumber(){
-      const year = new Date().getFullYear();
-      // use current local repairs to find last number
-      let next = 1;
-      const yearJobs = repairs.filter(r => r.job_number && r.job_number.startsWith('PE-'+year+'-'));
-      if (yearJobs.length>0) {
-        const nums = yearJobs.map(j => {
-          const parts = j.job_number.split('-');
-          return Number(parts[2]) || 0;
-        });
-        next = Math.max(...nums)+1;
-      }
-      return `PE-${year}-${String(next).padStart(4,'0')}`;
-    }
-
-    // SMS helpers
+    // ---------- Printing/SMS/Receipt helpers (kept from original) ----------
     function sendSMS(phone, text) {
-      if (!phone) { alert('No phone number'); return; }
-      const encoded = encodeURIComponent(text);
-      // Use sms: URL which opens default SMS app on mobile
-      window.location.href = `sms:${phone}?body=${encoded}`;
+      if (!phone) { alert("⚠️ No phone number to send SMS!"); return; }
+      const encodedText = encodeURIComponent(text);
+      const smsUrl = `sms:${phone}?body=${encodedText}`;
+      window.location.href = smsUrl;
     }
-
+    function formatLKR(amount) {
+      return new Intl.NumberFormat('si-LK', { style:'currency', currency:'LKR', minimumFractionDigits:2 }).format(Number(amount || 0));
+    }
     function generateReceivedSMSText(customerName, deviceBrand, deviceModel, jobNumber) {
-      return `ආයුබෝවන් ${customerName},\n\n${SHOP_NAME} වෙත ඔබේ ${deviceBrand || ''} ${deviceModel || ''} ලැබී ඇත.\n📌 රැකියා අංකය: ${jobNumber}\n☎️ ${HOTLINE}\n\n— ${SHOP_NAME}`;
+      return `ආයුබෝවන් ${customerName},\n\n${SHOP_NAME} තෝරාගැනීමට ස්තූතියි!\nඔබේ ${deviceBrand} ${deviceModel} උපාංගය අලුත්වැඩියා සඳහා අප වෙත ලැබී ඇත.\n\n📌 ඔබේ රැකියා අංකය: ${jobNumber}\n☎️ හොට්ලයින්: ${HOTLINE}\n\n— ${SHOP_NAME}`;
     }
     function generateReadySMSText(customerName, jobNumber, repairPrice, amountPaid) {
       const balance = (Number(repairPrice)||0) - (Number(amountPaid)||0);
-      return `ආයුබෝවන් ${customerName},\n\n📌 රැකියා අංකය: ${jobNumber}\n💰 මිල: Rs ${Number(repairPrice||0).toFixed(2)}\n💵 ගෙවූ මුදල: Rs ${Number(amountPaid||0).toFixed(2)}\n💳 ශේෂය: Rs ${balance.toFixed(2)}\n☎️ ${HOTLINE}\n— ${SHOP_NAME}`;
+      return `ආයුබෝවන් ${customerName},\n\n🎉 පුදුම පණිවිඩයක්! ඔබේ උපාංගය ${SHOP_NAME} හි භාර ගැනීමට සූදානම්!\n\n📌 රැකියා අංකය: ${jobNumber}\n💰 අලුත්වැඩියා මිල: Rs ${Number(repairPrice||0).toFixed(2)}\n💵 ගෙවූ මුදල: Rs ${Number(amountPaid||0).toFixed(2)}\n💳 ගෙවිය යුතු ශේෂය: Rs ${balance.toFixed(2)}\n\n☎️ හොට්ලයින්: ${HOTLINE}\n— ${SHOP_NAME}`;
     }
     function generateDeliveredSMSText(customerName, jobNumber, repairPrice, amountPaid) {
       const balance = (Number(repairPrice)||0) - (Number(amountPaid)||0);
-      return `ආයුබෝවන් ${customerName},\n\n✅ ඔබේ උපාංගය භාර ගෙන ඇත.\n📌 රැකියා අංකය: ${jobNumber}\n💰 මුදල: Rs ${Number(repairPrice||0).toFixed(2)}\n💵 ගෙවූ මුදල: Rs ${Number(amountPaid||0).toFixed(2)}\n${balance>0?`ශ්ේෂය: Rs ${balance.toFixed(2)}`:''}\n☎️ ${HOTLINE}\n— ${SHOP_NAME}`;
+      return `ආයුබෝවන් ${customerName},\n\n✅ ඔබේ උපාංගය ${SHOP_NAME} වෙතින් සාර්ථකව භාර දී ඇත!\n\n📌 රැකියා අංකය: ${jobNumber}\n💰 සම්පූර්ණ මුදල: Rs ${Number(repairPrice||0).toFixed(2)}\n💵 ගෙවූ මුදල: Rs ${Number(amountPaid||0).toFixed(2)}\n${balance > 0 ? `💳 ශේෂය: Rs ${balance.toFixed(2)}` : '✅ සම්පූර්ණයෙන් ගෙවා ඇත'}\n\n☎️ හොට්ලයින්: ${HOTLINE}\n\n— ${SHOP_NAME}`;
     }
     function generateDetailedSMSText(job) {
-      const bal = (Number(job.repair_price)||0) - (Number(job.amount_paid)||0);
-      return `ආයුබෝවන් ${job.customer_name},\n\n📌 රැකියා අංකය: ${job.job_number}\nඋපාංගය: ${job.device_brand} ${job.device_model}\nතත්ත්වය: ${job.status}\nඅලු.මිල: Rs ${Number(job.repair_price||0).toFixed(2)}\nගෙවූ: Rs ${Number(job.amount_paid||0).toFixed(2)}\nශේෂය: Rs ${bal.toFixed(2)}\n☎️ ${HOTLINE}\n— ${SHOP_NAME}`;
+      const balance = (Number(job.repairPrice || job.repair_price || 0) - Number(job.amountPaid || job.amount_paid || 0));
+      let msg = `ආයුබෝවන් ${job.customerName || job.customer_name},\n\n`;
+      msg += `📌 රැකියා අංකය: ${job.jobNumber || job.job_number}\n`;
+      msg += `${SHOP_NAME} තෝරාගැනීමට ස්තූතියි!\n`;
+      msg += `උපාංගය: ${job.deviceBrand || job.device_brand} ${job.deviceModel || job.device_model}\n`;
+      msg += `තත්ත්වය: ${job.status}\n`;
+      msg += `අලුත්වැඩියා මිල: Rs ${Number(job.repairPrice||job.repair_price||0).toFixed(2)}\n`;
+      msg += `ගෙවූ මුදල: Rs ${Number(job.amountPaid||job.amount_paid||0).toFixed(2)}\n`;
+      msg += `ශේෂය: Rs ${balance.toFixed(2)}\n\n`;
+      msg += `📍 ඔබේ උපාංගය භාර ගැනීමට අප වෙත පැමිණෙන්න.\n`;
+      msg += `☎️ සම්බන්ධ වන්න: ${HOTLINE}\n— ${SHOP_NAME}`;
+      return msg;
     }
-
-    // Receipt
     function generateReceiptHTML(job) {
-      const balance = (Number(job.repair_price)||0) - (Number(job.amount_paid)||0);
+      const balance = (Number(job.repairPrice||job.repair_price||0) - Number(job.amountPaid||job.amount_paid||0));
       const now = new Date().toLocaleString();
-      return (`[ ${SHOP_NAME} ]\nHotline: ${HOTLINE}\nRepair Receipt\n----------------\nJob: ${job.job_number}\nDate: ${now}\nCustomer: ${job.customer_name}\nPhone: ${job.customer_phone || '—'}\nAddress: ${job.customer_address || '—'}\nDevice: ${job.device_brand || ''} ${job.device_model || ''}\nIssue: ${job.issue_desc || '—'}\nStatus: ${job.status}\n----------------\nPrice: ${formatLKR(Number(job.repair_price||0))}\nPaid: ${formatLKR(Number(job.amount_paid||0))}\nDue: ${formatLKR(balance)}\n----------------\n`);
+      return `
+[ ${SHOP_NAME} ]
+දුරකථන: ${HOTLINE}
+අලුත්වැඩියා බිල්පත
+----------------
+රැකියා අංකය : ${job.jobNumber || job.job_number}
+දිනය       : ${now}
+පාරිභෝගිකයා: ${job.customerName || job.customer_name}
+දුරකථනය   : ${job.customerPhone || job.customer_phone}
+ලිපිනය     : ${job.customerAddress || job.customer_address || '—'}
+
+උපාංගය     : ${job.deviceBrand || job.device_brand} ${job.deviceModel || job.device_model}
+ගැටළුව     : ${job.issueDesc || job.issue_desc || '—'}
+තත්ත්වය     : ${job.status}
+
+----------------
+අලු.මිල    : ${formatLKR(job.repairPrice || job.repair_price || 0)}
+ගෙවූ මුදල  : ${formatLKR(job.amountPaid || job.amount_paid || 0)}
+ශේෂය       : ${formatLKR(balance)}
+----------------
+
+මෙම බිල්පත රඳවා ගන්න.
+
+----------------
+   අත්සන
+----------------
+`;
     }
 
-    // ---------- sync helpers ----------
-    async function onlineHandler() {
-      setSyncStatus('syncing','SYNCING...');
-      try {
-        await flushQueue();
-        await loadInitialData(); // refresh from cloud
-        await setupRealtime(); // (re)subscribe
-        setSyncStatus('online','ONLINE');
-      } catch (err) {
-        console.error('online handler error', err);
-        setSyncStatus('offline','OFFLINE');
+    function resetForm() {
+      document.getElementById('customerName').value = '';
+      document.getElementById('customerPhone').value = '';
+      document.getElementById('customerAddress').value = '';
+      document.getElementById('deviceBrand').value = '';
+      document.getElementById('deviceModel').value = '';
+      document.getElementById('issueDesc').value = '';
+      document.getElementById('status').value = 'Pending';
+      document.getElementById('repairDate').valueAsDate = new Date();
+      document.getElementById('deliveryDate').valueAsDate = new Date(Date.now() + 86400000 * 3);
+    }
+
+    // generate next job number from local list (safe)
+    function generateJobNumber() {
+      const year = new Date().getFullYear();
+      let nextNumber = 1;
+      const currentYearJobs = (jobs||[]).filter(job => (job.jobNumber || job.job_number || '').startsWith(`PE-${year}-`));
+      if (currentYearJobs.length > 0) {
+        const numbers = currentYearJobs.map(job => {
+          const parts = (job.jobNumber || job.job_number || '').split('-');
+          return parseInt(parts[2]) || 0;
+        });
+        nextNumber = Math.max(...numbers) + 1;
       }
-    }
-    function offlineHandler() {
-      setSyncStatus('offline','OFFLINE');
+      return `PE-${year}-${nextNumber.toString().padStart(4,'0')}`;
     }
 
-    // startup
-    (async function init(){
-      // load local copies first
-      repairs = JSON.parse(localStorage.getItem(LS_REPAIRS) || '[]');
+    // ---------- Start-up: load local, then cloud, setup realtime ----------
+    (async function init() {
+      // set defaults for date inputs
+      try { document.getElementById('repairDate').valueAsDate = new Date(); } catch(e){}
+      try { document.getElementById('deliveryDate').valueAsDate = new Date(Date.now() + 86400000 * 3); } catch(e){}
+
+      // load local fallback copies (keeps previous behavior)
+      jobs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       sales = JSON.parse(localStorage.getItem(LS_SALES) || '[]');
       inventory = JSON.parse(localStorage.getItem(LS_INVENTORY) || '[]');
+      syncQueue = JSON.parse(localStorage.getItem(LS_QUEUE) || '[]');
 
-      // render initial UI
-      tabs.forEach(t=>t.addEventListener('click', ()=>{
-        tabs.forEach(x=>x.classList.remove('active'));
-        t.classList.add('active');
-        currentTab = t.dataset.tab;
-        renderCurrentTab();
-      }));
+      // render local immediately
+      renderJobs();
 
-      // load remote if possible
+      // Attempt cloud connection
       if (navigator.onLine) {
-        await loadInitialData();
-        try { await setupRealtime(); } catch(e){ console.warn('realtime setup failed', e); }
-        await flushQueue();
-        setSyncStatus('online','ONLINE');
+        try {
+          await loadFromCloud();
+          await subscribeRealtime();
+          await flushQueue();
+          setSyncBadge('online');
+        } catch (err) {
+          console.warn('Cloud init failed', err);
+          setSyncBadge('offline');
+        }
       } else {
-        setSyncStatus('offline','OFFLINE');
-        renderCurrentTab();
+        setSyncBadge('offline');
       }
 
       // network events
-      window.addEventListener('online', onlineHandler);
-      window.addEventListener('offline', offlineHandler);
-
-      // periodically attempt flush
-      setInterval(()=>{ if (navigator.onLine) flushQueue(); }, 10_000);
+      window.addEventListener('online', async () => {
+        setSyncBadge('syncing');
+        try {
+          await flushQueue();
+          await loadFromCloud();
+          await subscribeRealtime();
+          setSyncBadge('online');
+        } catch (e) {
+          console.warn('Online handler error', e);
+          setSyncBadge('offline');
+        }
+      });
+      window.addEventListener('offline', () => setSyncBadge('offline'));
     })();
 
-    // ---------- simple edit / helpers for Sales/Inventory CRUD used above ----------
-    async function editSale(sale){
-      const newItem = prompt('Item', sale.item) || sale.item;
-      const newQty = Number(prompt('Quantity', sale.quantity)||sale.quantity);
-      const newTotal = Number(prompt('Total (LKR)', sale.total)||sale.total);
-      sale.item=newItem; sale.quantity=newQty; sale.total=newTotal; sale.updated_at=nowISO();
-      updateSale(sale); renderSales();
-    }
+    // Expose some utilities for debugging in console
+    window._pos = { jobs, sales, inventory, syncQueue, flushQueue, supabase };
 
-    // ---------- Utility functions for handling remote/updating generic ----------
-    // updateSale, updateInventory implemented above
-
-    // ---------- simple functions to wire up missing calls referenced earlier ----------
-    // the following are exposed to earlier code via function names used
-    window.printReceipt = (job)=>{ receiptContent.innerHTML = '<pre style="white-space:pre-wrap;font-family:monospace">'+generateReceiptHTML(job)+'</pre>'; setTimeout(()=>window.print(),100); };
-    window.sendSMS = sendSMS;
-
-    // small convenience to force UI render from other scopes:
-    window.renderRepairs = renderRepairs;
-    window.renderSales = renderSales;
-    window.renderInventory = renderInventory;
-
-  </script>
+    </script>
 </body>
 </html>
